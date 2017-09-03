@@ -1,0 +1,15 @@
+language: cpp
+
+sudo: required
+dist: xenial
+
+compiler:
+  - gcc
+  
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y qt5-default libqt5opengl5-dev
+  
+script:
+  - qmake .
+  - make -j4

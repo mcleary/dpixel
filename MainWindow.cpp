@@ -91,6 +91,8 @@ MainWindow::MainWindow( QWidget* parent ) :
 
 void MainWindow::connectSignals()
 {
+    connect( &_fileWatcher, SIGNAL( fileChanged( QString ) ), this, SLOT( shaderFileChangedCallback( QString ) ) );
+
     connect( _ui->testButton, SIGNAL( clicked() ), this, SLOT( createTest() ) );
     //connect( _ui->glButton, SIGNAL( clicked() ), this, SLOT( enableOpenGLFrontEnd() ) );
     connect( _ui->loadImageButton, SIGNAL( clicked() ), this, SLOT( loadImage() ) );
@@ -120,6 +122,8 @@ void MainWindow::connectSignals()
     connect( _ui->xBRZSpinBox, SIGNAL( valueChanged( int ) ), this, SLOT( applyXbrZ() ) );
     connect( _ui->xBRSpinBox, SIGNAL( valueChanged( int ) ), this, SLOT( applyXbr() ) );
     connect( _ui->beadsSpinBox, SIGNAL( valueChanged( int ) ), this, SLOT( applyBeads() ) );
+
+    connect( _ui->gifDelaySpinBox, SIGNAL( valueChanged( int ) ), this, SLOT( applyGIFDelay( int ) ) );
 
     connect( _ui->tabFrontEnd, SIGNAL( currentChanged( int ) ), this, SLOT( changeFrontEnd( int ) ) );
 
@@ -353,11 +357,20 @@ void MainWindow::setOpenGLCanvasData()
 void MainWindow::changeShader( QTreeWidgetItem *item, int column )
 {
     QString path = item->data( column, Qt::ToolTipRole ).toString();
+
     if( !path.contains( ".glsl", Qt::CaseInsensitive ) )
     {
         return;
     }
 
+    _fileWatcher.addPath( path );
+
+    updateShaderFile( path );
+}
+
+
+void MainWindow::updateShaderFile( const QString &path )
+{
     QFile file( path );
     file.open( QIODevice::ReadOnly );
     QString s;
@@ -371,6 +384,17 @@ void MainWindow::changeShader( QTreeWidgetItem *item, int column )
     stringList[ 1 ].chop( 6 );
 
     _ui->filteredGLWidget->setShaderSource( stringList[ 0 ], stringList[ 1 ] );
+}
+
+
+void MainWindow::shaderFileChangedCallback( const QString &path )
+{
+    _fileWatcher.addPath( path );
+
+    if( _ui->shaderUpdateCheckBox->isChecked() )
+    {
+        updateShaderFile( path );
+    }
 }
 
 
@@ -782,6 +806,12 @@ void MainWindow::applyBeads()
     BeadsFilter* beadsFilter = new BeadsFilter( _inputImage, _ui->beadsSpinBox->value() );
 
     applyAndShowOutputImage( beadsFilter );
+}
+
+
+void MainWindow::applyGIFDelay( int delay )
+{
+    _ui->filteredGLWidget->setAnimationDelay( delay );
 }
 
 
